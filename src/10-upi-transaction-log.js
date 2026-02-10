@@ -47,5 +47,60 @@
  *   //      frequentContact: "Swiggy", allAbove100: false, hasLargeTransaction: true }
  */
 export function analyzeUPITransactions(transactions) {
-  // Your code here
+  if (!Array.isArray(transactions) || transactions.length === 0) return null;
+  const validTransactions = transactions.filter(
+    (txn) =>
+      typeof txn.amount === "number" &&
+      Number.isFinite(txn.amount) &&
+      txn.amount > 0 &&
+      (txn.type === "credit" || txn.type === "debit"),
+  );
+  if (validTransactions.length === 0) return null;
+  const totalCredit = validTransactions.reduce(
+    (sum, txn) => (txn.type === "credit" ? sum + txn.amount : sum),
+    0,
+  );
+  const totalDebit = validTransactions.reduce(
+    (sum, txn) => (txn.type === "debit" ? sum + txn.amount : sum),
+    0,
+  );
+  const netBalance = totalCredit - totalDebit;
+  const transactionCount = validTransactions.length;
+  const avgTransaction = Math.round(
+    validTransactions.reduce((sum, txn) => sum + txn.amount, 0) /
+      transactionCount,
+  );
+  const highestTransaction = validTransactions.reduce(
+    (maxTxn, txn) => (txn.amount > maxTxn.amount ? txn : maxTxn),
+    validTransactions[0],
+  );
+  const categoryBreakdown = validTransactions.reduce((breakdown, txn) => {
+    breakdown[txn.category] = (breakdown[txn.category] || 0) + txn.amount;
+    return breakdown;
+  }, {});
+  const contactFrequency = validTransactions.reduce((freq, txn) => {
+    freq[txn.to] = (freq[txn.to] || 0) + 1;
+    return freq;
+  }, {});
+  const frequentContact = Object.entries(contactFrequency).reduce(
+    (maxContact, [contact, count]) =>
+      count > contactFrequency[maxContact] ? contact : maxContact,
+    Object.keys(contactFrequency)[0],
+  );
+  const allAbove100 = validTransactions.every((txn) => txn.amount > 100);
+  const hasLargeTransaction = validTransactions.some(
+    (txn) => txn.amount >= 5000,
+  );
+  return {
+    totalCredit,
+    totalDebit,
+    netBalance,
+    transactionCount,
+    avgTransaction,
+    highestTransaction,
+    categoryBreakdown,
+    frequentContact,
+    allAbove100,
+    hasLargeTransaction,
+  };
 }
